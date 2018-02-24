@@ -11,7 +11,7 @@ import android.view.animation.Animation;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Transformation;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -20,7 +20,7 @@ import java.util.Map;
  * @time 15:08
  * @description
  */
-public class CustomPentagonView extends View {
+public class MultidimensionalView extends View {
 
     /**
      * 背景画笔
@@ -98,10 +98,8 @@ public class CustomPentagonView extends View {
     /**
      * 顶点个数
      */
-    private static final int POINT_COUNTS = 5;
+    private int mPointCounts = 5;
 
-    private final float sin36 = (float) Math.sin(getRadians(36));
-    private final float sin54 = (float) Math.sin(getRadians(54));
 
 
     /**
@@ -112,7 +110,7 @@ public class CustomPentagonView extends View {
     /**
      * 小标题
      */
-   private String title[] = new String[]{"结交人脉", "维护人脉", "时间投入", "忙碌程度", "活跃"};
+   private String title[];
 
     /**
      * 数据 key标题  value值
@@ -136,15 +134,15 @@ public class CustomPentagonView extends View {
 
     private int mPaintAlpha;
 
-    public CustomPentagonView(Context context) {
+    public MultidimensionalView(Context context) {
         this(context, null);
     }
 
-    public CustomPentagonView(Context context, AttributeSet attrs) {
+    public MultidimensionalView(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
-    public CustomPentagonView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public MultidimensionalView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
     }
@@ -163,8 +161,11 @@ public class CustomPentagonView extends View {
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        paddingTopAndBottom = (int) ScreenUtil.dp2px(getContext(), 60);
-        inSideLength = (int) ((double)(height - 2 * paddingTopAndBottom) / (double)(1 + sin54));
+        paddingTopAndBottom = Math.max(getPaddingTop(),getPaddingBottom());
+        if(paddingTopAndBottom == 0){
+            paddingTopAndBottom = (int) ScreenUtil.dp2px(getContext(), 60);
+        }
+        inSideLength = height / 2 - paddingTopAndBottom;
         circleRadius = ScreenUtil.dp2px(getContext(), 4);
         centerPoint = new PointF(w / 2, inSideLength + paddingTopAndBottom);
 
@@ -173,9 +174,12 @@ public class CustomPentagonView extends View {
     /**设置数据 key-->顶点标题   value --> 数值[0,100]
      * @param data 数据map
      */
-    public void setData(Map<String, Integer> data) {
+    public void bindData(LinkedHashMap<String, Integer> data) {
         if (data != null) {
             this.data = data;
+            mPointCounts = data.size();
+            title = new String[mPointCounts];
+            data.keySet().toArray(title);
         }
         initAnimation();
     }
@@ -238,15 +242,6 @@ public class CustomPentagonView extends View {
         mBoldLinePaint.setColor(getContext().getResources().getColor(R.color.white));
         mBoldLinePaint.setStrokeWidth(ScreenUtil.dp2px(getContext(), 2));
 
-        ////
-        data = new HashMap<>();
-        data.put("结交人脉", 10);
-        data.put("维护人脉", 20);
-        data.put("时间投入", 30);
-        data.put("忙碌程度", 40);
-        data.put("活跃", 50);
-
-        initAnimation();
     }
 
     /**
@@ -256,7 +251,7 @@ public class CustomPentagonView extends View {
         initBgPoints();
         mBgPath.reset();
         mBgPath.moveTo(mBgPoints[0].x, mBgPoints[0].y);//第一个点 顶点
-        for (int i = 1; i < POINT_COUNTS; i++) {
+        for (int i = 1; i < mPointCounts; i++) {
             mBgPath.lineTo(mBgPoints[i].x, mBgPoints[i].y);
         }
         mBgPath.close();
@@ -272,7 +267,7 @@ public class CustomPentagonView extends View {
         initDeepBgPoints();
         mBgPath.reset();
         mBgPath.moveTo(mDeepBgPoints[0].x, mDeepBgPoints[0].y);//第一个点 顶点
-        for (int i = 1; i < POINT_COUNTS; i++) {
+        for (int i = 1; i < mPointCounts; i++) {
             mBgPath.lineTo(mDeepBgPoints[i].x, mDeepBgPoints[i].y);
         }
         mBgPath.close();
@@ -287,8 +282,8 @@ public class CustomPentagonView extends View {
     private void initDeepBgPoints() {
         initBgPoints();
         if (mDeepBgPoints == null) {
-            mDeepBgPoints = new PointF[POINT_COUNTS];
-            for (int i = 0; i < POINT_COUNTS; i++) {
+            mDeepBgPoints = new PointF[mPointCounts];
+            for (int i = 0; i < mPointCounts; i++) {
                 mDeepBgPoints[i] = getMiddlePointFromCentre(mBgPoints[i]);
             }
         }
@@ -303,7 +298,7 @@ public class CustomPentagonView extends View {
         mLinePaint.setColor(getContext().getResources().getColor(R.color.white));
         mLinePaint.setStrokeWidth(1);
         mLinePaint.setAlpha(mPaintAlpha);
-        for (int i = 0; i < POINT_COUNTS; i++) {
+        for (int i = 0; i < mPointCounts; i++) {
             canvas.drawLine(centerPoint.x, centerPoint.y, mBgPoints[i].x, mBgPoints[i].y, mLinePaint);
         }
     }
@@ -332,27 +327,33 @@ public class CustomPentagonView extends View {
     }
 
     /**
-     * 初始化各顶点
+     * 初始化各顶点 利用中心坐标求出各顶点的坐标
      */
     private void initBgPoints() {
         if (mBgPoints == null) {
-            mBgPoints = new PointF[POINT_COUNTS];
-            mBgPoints[0] = new PointF(width / 2, paddingTopAndBottom);
-            mBgPoints[1] = new PointF((float) ((double)width / 2 + (double)(inSideLength * 2 * sin36 * sin54)), (float) ((double)(inSideLength * 2 * sin36 * sin36) + (double)(paddingTopAndBottom)));
-            mBgPoints[2] = new PointF((float) ((double)width / 2 +(double)(inSideLength * sin36)), (float) ((double)inSideLength * (1 + sin54) + (double)paddingTopAndBottom));
-            mBgPoints[3] = new PointF((float) ((double)width / 2 - (double)inSideLength * sin36), (float) ((double)inSideLength * (1 + sin54) + (double)paddingTopAndBottom));
-            mBgPoints[4] = new PointF((float) ((double)width / 2 - (double)inSideLength * 2 * sin36 * sin54), (float) ((double)inSideLength * 2 * sin36 * sin36 + (double)paddingTopAndBottom));
+            mBgPoints = new PointF[mPointCounts];
+            double degrees = getRadians(360/ mPointCounts);
+            for (int i = 0; i < mBgPoints.length; i++) {
+                mBgPoints[i] = new PointF((float) (centerPoint.x + inSideLength * Math.sin(degrees * i)), (float) (centerPoint.y - inSideLength * Math.cos(degrees * i)));
+            }
         }
     }
 
     @Override
     protected void onDraw(Canvas canvas) {
+        //画背景
         drawBackground(canvas);
+        //画深色背景
         drawDeepBackground(canvas);
+        //画网格 中心到各顶点线
         drawMesh(canvas);
+        //画标题
         drawTitle(canvas);
+        //画坐标点
         drawCoordinate(canvas);
+        //画每个坐标点连接起来的面积区域
         drawShadow(canvas);
+        //连接每个坐标
         drawBoldLine(canvas);
     }
 
@@ -363,12 +364,12 @@ public class CustomPentagonView extends View {
      */
     private void drawBoldLine(Canvas canvas) {
         mBoldLinePaint.setAlpha(mPaintAlpha);
-        for (int i = 0; i < POINT_COUNTS; i++) {
+        for (int i = 0; i < mPointCounts; i++) {
             if (mDataPoints[i].y != centerPoint.y
-                    && mDataPoints[(i + 1) % POINT_COUNTS].y != centerPoint.y) {
+                    && mDataPoints[(i + 1) % mPointCounts].y != centerPoint.y) {
                 canvas.drawLine(mDataPoints[i].x, mDataPoints[i].y,
-                        mDataPoints[(i + 1) % POINT_COUNTS].x,
-                        mDataPoints[(i + 1) % POINT_COUNTS].y,
+                        mDataPoints[(i + 1) % mPointCounts].x,
+                        mDataPoints[(i + 1) % mPointCounts].y,
                         mBoldLinePaint);
             }
         }
@@ -382,7 +383,7 @@ public class CustomPentagonView extends View {
     private void drawShadow(Canvas canvas) {
         mShadowPaint.setAlpha(mPaintAlpha*100/255);
         mShadowPath.moveTo(mDataPoints[0].x, mDataPoints[0].y);
-        for (int i = 1; i < POINT_COUNTS; i++) {
+        for (int i = 1; i < mPointCounts; i++) {
             mShadowPath.lineTo(mDataPoints[i].x, mDataPoints[i].y);
         }
         mShadowPath.close();
@@ -397,7 +398,7 @@ public class CustomPentagonView extends View {
     private void drawCoordinate(Canvas canvas) {
         initDataPoints();
         mLinePaint.setAlpha(mPaintAlpha);
-        for (int i = 0; i < POINT_COUNTS; i++) {
+        for (int i = 0; i < mPointCounts; i++) {
             if (mDataPoints[i].y != centerPoint.y) {
                 //排除数据为0的情况
                 //画圆
@@ -411,14 +412,14 @@ public class CustomPentagonView extends View {
      * 初始化坐标
      */
     private void initDataPoints() {
-        mDataPoints = new PointF[POINT_COUNTS];
-        for (int i = 0; i < POINT_COUNTS; i++) {
+        mDataPoints = new PointF[mPointCounts];
+        for (int i = 0; i < mPointCounts; i++) {
             mDataPoints[i] = getDataPoint(mBgPoints[i], data.get(title[i]));
         }
     }
 
     /**
-     * 获取指定数值的点
+     * 获取指定数值的点，根据相应的百分比
      *
      * @param p     顶点
      * @param value 数值
@@ -453,14 +454,14 @@ public class CustomPentagonView extends View {
         //小标题
         mTitlePaint.setColor(getContext().getResources().getColor(R.color.text_color_black));
         mTitlePaint.setAlpha(mPaintAlpha);
-        for (int i = 0; i < POINT_COUNTS; i++) {
+        for (int i = 0; i < mPointCounts; i++) {
             canvas.drawText(title[i], mTitlePoints[i].x - mTitlePaint.measureText(title[i]) / 2, mTitlePoints[i].y, mTitlePaint);
         }
 
         //蓝色数值
         mTitlePaint.setColor(getContext().getResources().getColor(R.color.text_color_blue));
         mTitlePaint.setAlpha(mPaintAlpha);
-        for (int i = 0; i < POINT_COUNTS; i++) {
+        for (int i = 0; i < mPointCounts; i++) {
             String text;
             if (data.get(title[i]) > 0) {
                 text = String.valueOf(data.get(title[i]));
@@ -477,8 +478,8 @@ public class CustomPentagonView extends View {
      */
     private void initTitlePoints() {
         if (mTitlePoints == null) {
-            mTitlePoints = new PointF[POINT_COUNTS];
-            for (int i = 0; i < POINT_COUNTS; i++) {
+            mTitlePoints = new PointF[mPointCounts];
+            for (int i = 0; i < mPointCounts; i++) {
                 mTitlePoints[i] = getTitlePoint(mBgPoints[i]);
             }
         }
