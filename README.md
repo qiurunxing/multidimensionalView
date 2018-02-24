@@ -1,2 +1,2 @@
 # pentagonView
-五维图
+五维图效果
