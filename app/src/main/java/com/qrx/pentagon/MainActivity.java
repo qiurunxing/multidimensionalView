@@ -23,7 +23,6 @@ public class MainActivity extends AppCompatActivity {
         data.put("维护人脉", 50);
         data.put("时间投入", 30);
         data.put("忙碌程度", 40);
-        data.put("逾期", 15);
         data.put("活跃", 50);
         data.put("信用", 80);
         mMultidimensionalView.bindData(data);
