@@ -101,7 +101,6 @@ public class MultidimensionalView extends View {
     private int mPointCounts = 5;
 
 
-
     /**
      * 中心坐标
      */
@@ -110,7 +109,7 @@ public class MultidimensionalView extends View {
     /**
      * 小标题
      */
-   private String title[];
+    private String title[];
 
     /**
      * 数据 key标题  value值
@@ -161,8 +160,8 @@ public class MultidimensionalView extends View {
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        paddingTopAndBottom = Math.max(getPaddingTop(),getPaddingBottom());
-        if(paddingTopAndBottom == 0){
+        paddingTopAndBottom = Math.max(getPaddingTop(), getPaddingBottom());
+        if (paddingTopAndBottom == 0) {
             paddingTopAndBottom = (int) ScreenUtil.dp2px(getContext(), 60);
         }
         inSideLength = height / 2 - paddingTopAndBottom;
@@ -171,7 +170,9 @@ public class MultidimensionalView extends View {
 
     }
 
-    /**设置数据 key-->顶点标题   value --> 数值[0,100]
+    /**
+     * 设置数据 key-->顶点标题   value --> 数值[0,100]
+     *
      * @param data 数据map
      */
     public void bindData(LinkedHashMap<String, Integer> data) {
@@ -332,7 +333,7 @@ public class MultidimensionalView extends View {
     private void initBgPoints() {
         if (mBgPoints == null) {
             mBgPoints = new PointF[mPointCounts];
-            double degrees = getRadians(360/ mPointCounts);
+            double degrees = getRadians(360 / mPointCounts);
             for (int i = 0; i < mBgPoints.length; i++) {
                 mBgPoints[i] = new PointF((float) (centerPoint.x + inSideLength * Math.sin(degrees * i)), (float) (centerPoint.y - inSideLength * Math.cos(degrees * i)));
             }
@@ -381,7 +382,7 @@ public class MultidimensionalView extends View {
      * @param canvas
      */
     private void drawShadow(Canvas canvas) {
-        mShadowPaint.setAlpha(mPaintAlpha*100/255);
+        mShadowPaint.setAlpha(mPaintAlpha * 100 / 255);
         mShadowPath.moveTo(mDataPoints[0].x, mDataPoints[0].y);
         for (int i = 1; i < mPointCounts; i++) {
             mShadowPath.lineTo(mDataPoints[i].x, mDataPoints[i].y);
